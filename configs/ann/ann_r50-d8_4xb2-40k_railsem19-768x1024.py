@@ -34,4 +34,3 @@ optimizer_config = dict(
     type="GradientCumulativeOptimizer",
     cumulative_iters=2,  # two iterations of batch_size=1 = effective batch_size=2
 )
-
