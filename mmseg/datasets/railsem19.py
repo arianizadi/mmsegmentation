@@ -1,52 +1,28 @@
 import os.path as osp
-from typing import List, Optional
+import json
+from typing import List
 
-import mmcv
-import mmengine
 import numpy as np
-from mmengine.dataset import BaseDataset
 from mmengine.fileio import get_file_backend
-
 from mmseg.registry import DATASETS
-from mmseg.utils import get_classes, get_palette
 from mmseg.datasets import BaseSegDataset
 
 
 @DATASETS.register_module()
 class RailSem19Dataset(BaseSegDataset):
-    """RailSem19Dataset dataset.
+    """RailSem19 dataset with 19 classes and color palette from rs19-config.json."""
 
-    In segmentation map annotation for RailSem19Dataset,
-    ``reduce_zero_label`` is fixed to False. The ``img_suffix``
-    is fixed to '.jpg' and ``seg_map_suffix`` is fixed to '.png'.
+    # Path to the dataset root
+    data_root = "data/RailSem19/"
+    cfg_path = osp.join(data_root, "rs19-config.json")
 
-    Args:
-        img_suffix (str): Suffix of images. Default: '.jpg'
-        seg_map_suffix (str): Suffix of segmentation maps. Default: '.png'
-    """
-
-    METAINFO = dict(
-        classes=(
-            "background",
-            "rail",
-            "rail_switch",
-            "rail_crossing",
-            "rail_switch_stand",
-            "rail_switch_stand_light",
-            "rail_switch_stand_light_off",
-            "rail_switch_stand_light_on",
-            "rail_switch_stand_light_off_on",
-            "rail_switch_stand_light_on_off",
-            "rail_switch_stand_light_off_on_off",
-            "rail_switch_stand_light_on_off_on",
-            "rail_switch_stand_light_off_on_off_on",
-            "rail_switch_stand_light_on_off_on_off",
-            "rail_switch_stand_light_off_on_off_on_off",
-            "rail_switch_stand_light_on_off_on_off_on",
-            "rail_switch_stand_light_off_on_off_on_off_on",
-            "rail_switch_stand_light_on_off_on_off_on_off",
-        )
-    )
+    # Load class names and palette from JSON
+    with open(cfg_path, "r") as f:
+        json_data = json.load(f)
+        METAINFO = {
+            "classes": [item["name"] for item in json_data["labels"]],
+            "palette": [tuple(item["color"]) for item in json_data["labels"]],
+        }
 
     def __init__(self, img_suffix=".jpg", seg_map_suffix=".png", **kwargs) -> None:
         super().__init__(
@@ -57,11 +33,6 @@ class RailSem19Dataset(BaseSegDataset):
         )
 
     def load_data_list(self) -> List[dict]:
-        """Load annotation from directory or annotation file.
-
-        Returns:
-            list[dict]: All data info of dataset.
-        """
         data_list = []
         img_dir = self.data_prefix.get("img_path")
         ann_dir = self.data_prefix.get("seg_map_path")
@@ -83,50 +54,3 @@ class RailSem19Dataset(BaseSegDataset):
         data_list = sorted(data_list, key=lambda x: x["img_path"])
         return data_list
 
-    def get_classes(self, classes=None):
-        """Get class names of current dataset.
-
-        Args:
-            classes (Sequence[str] | str | None): If classes is None, use
-                default CLASSES defined by builtin dataset. If classes is a
-                string, take it as a file name. The file contains the name of
-                classes where each line contains one class name. If classes is
-                a tuple or list, override the CLASSES defined by the dataset.
-
-        Returns:
-            tuple[str] or list[str]: Names of categories of the dataset.
-        """
-        if classes is None:
-            return self.METAINFO["classes"]
-        elif isinstance(classes, str):
-            # take it as a file path
-            class_names = mmengine.list_from_file(classes)
-        elif isinstance(classes, (tuple, list)):
-            class_names = classes
-        else:
-            raise ValueError(f"Unsupported type {type(classes)} of classes.")
-
-        return class_names
-
-    def get_palette(self, palette=None):
-        """Get palette of current dataset.
-
-        Args:
-            palette (Sequence[Sequence[int]]] | np.ndarray | None): If
-                palette is None, use default PALETTE defined by builtin dataset.
-                If palette is a sequence of colors, override the PALETTE
-                defined by the dataset.
-
-        Returns:
-            list[tuple[int]] or np.ndarray: The palette of this dataset.
-        """
-        if palette is None:
-            return self.METAINFO["palette"]
-        elif isinstance(palette, list):
-            return palette
-        elif isinstance(palette, tuple):
-            return list(palette)
-        elif isinstance(palette, np.ndarray):
-            return palette.tolist()
-        else:
-            raise ValueError(f"Unsupported type {type(palette)} of palette.")
