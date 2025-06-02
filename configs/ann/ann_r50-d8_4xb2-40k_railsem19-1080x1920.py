@@ -35,22 +35,3 @@ optimizer_config = dict(
     cumulative_iters=2,  # two iterations of batch_size=1 = effective batch_size=2
 )
 
-# When using gradient accumulation, adjust LR
-optimizer = dict(
-    type="AdamW",
-    lr=3e-05,  # Half of original 6e-05 since effective batch size doubled
-    weight_decay=0.01,
-)
-
-# Add warmup for stability
-param_scheduler = [
-    dict(type="LinearLR", start_factor=0.001, by_epoch=False, begin=0, end=1000),
-    dict(
-        type="PolyLR",
-        eta_min=0,
-        power=0.9,
-        begin=1000,
-        end=40000,
-        by_epoch=False,
-    ),
-]
