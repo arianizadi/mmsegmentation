@@ -1,15 +1,13 @@
 _base_ = ['./bisenetv2_fcn_4xb8-160k_cityscapes-1024x1024.py']
 dataset_type = 'RailSem19Dataset'
 
-# Override norm_cfg to use regular BN instead of SyncBN for single GPU training
-norm_cfg = dict(type='BN', requires_grad=True)
+norm_cfg = dict(type='SyncBN', requires_grad=True)
 data_root = 'data/RailSem19/'
 crop_size = (576, 1024)
 data_preprocessor = dict(size=crop_size)
 model = dict(
     data_preprocessor=data_preprocessor,
     decode_head=dict(num_classes=19),
-    decode_head=dict(num_classes=19, norm_cfg=norm_cfg),
     auxiliary_head=[
         dict(type='FCNHead', in_channels=16, channels=16, num_convs=2, num_classes=19, in_index=1,
              norm_cfg=norm_cfg, concat_input=False, align_corners=False,
@@ -54,7 +52,7 @@ test_pipeline = [
     dict(type='PackSegInputs')
 ]
 train_dataloader = dict(
-    batch_size=1,
+    batch_size=2,
     num_workers=2,
     dataset=dict(
         type=dataset_type,
