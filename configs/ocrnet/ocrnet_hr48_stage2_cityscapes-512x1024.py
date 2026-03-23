@@ -7,7 +7,7 @@ _base_ = ['./ocrnet_hr48_4xb2-160k_cityscapes-512x1024.py']
 
 # Set this to the best checkpoint from Stage 1:
 #   work_dirs/ocrnet_hr48_stage1_mapillary-512x1024/<timestamp>/best_mIoU_iter_<N>.pth
-load_from = None  # <-- SET THIS after Stage 1 completes
+load_from = None  # Set automatically by train script; override here only if running manually
 
 # SyncBN for multi-GPU training (3× RTX 6000, matches paper)
 norm_cfg = dict(type='SyncBN', requires_grad=True)
