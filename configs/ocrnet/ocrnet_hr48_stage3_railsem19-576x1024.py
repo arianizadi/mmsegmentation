@@ -6,7 +6,7 @@ _base_ = ['./ocrnet_hr48_4xb2-160k_cityscapes-512x1024.py']
 
 # Set this to the best checkpoint from Stage 2:
 #   work_dirs/ocrnet_hr48_stage2_cityscapes-512x1024/<timestamp>/best_mIoU_iter_<N>.pth
-load_from = None  # <-- SET THIS after Stage 2 completes
+load_from = 'work_dirs/ocrnet_hr48_stage2_cityscapes-512x1024/best_mIoU_iter_88000.pth'
 
 dataset_type = 'RailSem19Dataset'
 data_root = 'data/RailSem19/'
@@ -14,8 +14,10 @@ crop_size = (576, 1024)
 
 # SyncBN for multi-GPU training (3× RTX 6000, matches paper)
 norm_cfg = dict(type='SyncBN', requires_grad=True)
+data_preprocessor = dict(size=crop_size)
 model = dict(
     pretrained=None,  # load_from handles weights; skip redundant ImageNet backbone load
+    data_preprocessor=dict(size=crop_size),
     backbone=dict(norm_cfg=norm_cfg),
     decode_head=[
         dict(
@@ -109,22 +111,21 @@ optim_wrapper = dict(
 
 param_scheduler = [
     dict(type='LinearLR', start_factor=0.1, by_epoch=False, begin=0, end=1500),
-    dict(type='PolyLR', eta_min=1e-6, power=0.9, begin=1500, end=120000, by_epoch=False)
+    dict(type='PolyLR', eta_min=1e-6, power=0.9, begin=1500, end=500000, by_epoch=False)
 ]
 
-train_cfg = dict(type='IterBasedTrainLoop', max_iters=120000, val_interval=4000)
+train_cfg = dict(type='IterBasedTrainLoop', max_iters=500000, val_interval=8000)
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook',
         by_epoch=False,
-        interval=4000,
+        interval=8000,
         save_best='mIoU',
         rule='greater'),
     logger=dict(type='LoggerHook', interval=10, log_metric_by_epoch=False))
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(type='SegLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-
 # Stop early if mIoU doesn't improve by >0.5 for 5 consecutive validations (20k iters)
 # RS19 is small so gains tend to be larger — use higher min_delta
 custom_hooks = [
@@ -134,3 +135,4 @@ custom_hooks = [
         rule='greater',
         min_delta=0.5,
         patience=5)]
+

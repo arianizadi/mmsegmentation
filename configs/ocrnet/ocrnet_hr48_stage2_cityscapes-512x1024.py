@@ -53,22 +53,21 @@ optim_wrapper = dict(
 
 param_scheduler = [
     dict(type='LinearLR', start_factor=0.1, by_epoch=False, begin=0, end=1500),
-    dict(type='PolyLR', eta_min=1e-6, power=0.9, begin=1500, end=120000, by_epoch=False)
+    dict(type='PolyLR', eta_min=1e-6, power=0.9, begin=1500, end=500000, by_epoch=False)
 ]
 
-train_cfg = dict(type='IterBasedTrainLoop', max_iters=120000, val_interval=4000)
+train_cfg = dict(type='IterBasedTrainLoop', max_iters=500000, val_interval=8000)
 default_hooks = dict(
     checkpoint=dict(
         type='CheckpointHook',
         by_epoch=False,
-        interval=4000,
+        interval=8000,
         save_best='mIoU',
         rule='greater'),
     logger=dict(type='LoggerHook', interval=50, log_metric_by_epoch=False))
 
 vis_backends = [dict(type='LocalVisBackend'), dict(type='TensorboardVisBackend')]
 visualizer = dict(type='SegLocalVisualizer', vis_backends=vis_backends, name='visualizer')
-
 # Stop early if mIoU doesn't improve by >0.2 for 5 consecutive validations (20k iters)
 custom_hooks = [
     dict(
@@ -77,3 +76,4 @@ custom_hooks = [
         rule='greater',
         min_delta=0.2,
         patience=5)]
+
